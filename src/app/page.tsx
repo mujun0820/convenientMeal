@@ -1,103 +1,177 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useState, useEffect } from "react";
+import useSWR from "swr";
+import { ChevronLeft, Github, Instagram, ChevronRight } from "lucide-react";
+import Link from "next/link";
+
+interface MealData {
+  sandwich: string[];
+  salad: string[];
+  chicken: string[];
+  grain: string[];
+  etc: string[];
+}
+
+interface MenuData {
+  date: string;
+  morning: MealData | string[];
+  evening: MealData | string[];
+}
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+function getWeekday(dateStr: string): string {
+  const dateObj = new Date(dateStr);
+  const weekdays = [
+    "일요일",
+    "월요일",
+    "화요일",
+    "수요일",
+    "목요일",
+    "금요일",
+    "토요일",
+  ];
+  return weekdays[dateObj.getDay()] || "";
+}
+
+function changeDate(dateStr: string, diff: number): string {
+  const dateObj = new Date(dateStr);
+  dateObj.setDate(dateObj.getDate() + diff);
+  return dateObj.toISOString().split("T")[0];
+}
+
+const keyMapping: Record<string, string> = {
+  sandwich: "샌드위치",
+  salad: "샐러드",
+  chicken: "닭가슴살",
+  grain: "선식",
+};
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+}
+
+const renderMeal = (meal: string[] | MealData, isMobile: boolean) => {
+  if (Array.isArray(meal)) {
+    if (meal.length === 0) return isMobile ? null : <li className="text-gray-600 dark:text-gray-400">메뉴 없음</li>;
+    return meal.map((item, idx) => (
+        <li key={idx} className="text-gray-700 dark:text-gray-300">{item}</li>
+    ));
+  } else {
+    const categories = Object.keys(meal) as (keyof MealData)[];
+    const filteredCategories = categories.filter((category) => category !== "etc");
+    if (isMobile) {
+      const combinedItems = filteredCategories.reduce<string[]>((acc, category) => {
+        return acc.concat(meal[category]);
+      }, []);
+      if (combinedItems.length === 0) return null;
+      return combinedItems.map((item, idx) => (
+          <li key={idx} className="text-gray-700 dark:text-gray-300">{item}</li>
+      ));
+    } else {
+      return filteredCategories.map((category) => (
+          <div key={category} className="mb-2">
+            <h3 className="font-bold capitalize dark:text-white">{keyMapping[category] || category}</h3>
+            <ul className="list-disc pl-5">
+              {meal[category].length > 0 ? (
+                  meal[category].map((item, idx) => (
+                      <li key={idx} className="text-gray-700 dark:text-gray-300">{item}</li>
+                  ))
+              ) : (
+                  <li className="text-gray-600 dark:text-gray-400">메뉴 없음</li>
+              )}
+            </ul>
+          </div>
+      ));
+    }
+  }
+};
+
+export default function Page() {
+  const [currentDate, setCurrentDate] = useState<string>("");
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    setCurrentDate(`${yyyy}-${mm}-${dd}`);
+  }, []);
+
+  const { data: menuData, error, isLoading } = useSWR<MenuData>(
+      `/api/menu?date=${currentDate}`,
+      fetcher
+  );
+
+  const handlePrevDate = () => {
+    setCurrentDate((prev) => changeDate(prev, -1));
+  };
+
+  const handleNextDate = () => {
+    setCurrentDate((prev) => changeDate(prev, 1));
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+      <div className="flex justify-center items-center w-screen h-screen max-[640px]:h-[90svh] bg-white dark:bg-zinc-900 max-[640px]:pt-10">
+        <div className="min-h-[70svh] max-[640px]:min-h-[90svh] w-[60vw] max-[640px]:w-[90vw] flex flex-col bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-gray-800 border-1 rounded-2xl m-4">
+          <header className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="text-xl font-bold">디미고간편식</div>
+            <div className="flex space-x-4">
+            <span className="cursor-pointer">
+              <Link href="https://github.com/mujun0820"><Github /></Link>
+            </span>
+              <span className="cursor-pointer">
+              <Link href="https://www.instagram.com/mujun0820?igsh=MXdkcGVmM2pmaTV4Mw%3D%3D&utm_source=qr"><Instagram /></Link>
+            </span>
+            </div>
+          </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          <div className="flex justify-center items-center mt-4">
+            <button onClick={handlePrevDate} className="px-4 py-2 rounded mr-2 bg-gray-200 dark:bg-gray-700"> <ChevronLeft /> </button>
+            <div className="text-center text-lg">
+              {menuData ? `${menuData.date} ${getWeekday(menuData.date)}` : currentDate}
+            </div>
+            <button onClick={handleNextDate} className="px-4 py-2 rounded ml-2 bg-gray-200 dark:bg-gray-700"> <ChevronRight /> </button>
+          </div>
+
+          {isLoading ? (
+              <div className="flex-grow flex items-center justify-center">
+                <p>Loading...</p>
+              </div>
+          ) : error ? (
+              <div className="flex-grow flex items-center justify-center">
+                <p>Error loading menu.</p>
+              </div>
+          ) : (
+              <main className="flex-grow flex items-center justify-center">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-5xl p-4">
+                  <div className="bg-gray-100 dark:bg-zinc-700 p-4 rounded-xl shadow h-96 max-[640px]:h-40 max-[640px]:p-2">
+                    <h2 className="text-center font-semibold mb-2 text-xl max-[640px]:text-lg">조식</h2>
+                    <ul className="list-disc pl-5 max-[640px]:text-[0.9rem]">
+                      {menuData && renderMeal(menuData.morning, isMobile)}
+                    </ul>
+                  </div>
+                  <div className="bg-gray-100 dark:bg-zinc-700 p-4 rounded-xl shadow h-96 max-[640px]:h-40 max-[640px]:p-2">
+                    <h2 className="text-center font-semibold mb-2 text-xl max-[640px]:text-lg">석식</h2>
+                    <ul className="list-disc pl-5 max-[640px]:text-[0.9rem]">
+                      {menuData && renderMeal(menuData.evening, isMobile)}
+                    </ul>
+                  </div>
+                </div>
+              </main>
+          )}
+
+          <footer className="text-center p-4 border-t border-gray-200 dark:border-gray-700">© 디미고간편식 by mujun0820</footer>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </div>
   );
 }
