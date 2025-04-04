@@ -13,7 +13,7 @@ iOS와 Android 모두에서 **홈 화면에 설치하여 앱처럼 사용할 수
 ### ✅ iOS (아이폰) 기준
 
 1. [https://간편식.mujun0820.com](https://간편식.mujun0820.com) 접속
-2. Safari 하단 공유 버튼 ![공유버튼](https://developer.apple.com/design/human-interface-guidelines/images/icons/share-action.svg) 클릭
+2. Safari 하단 공유 버튼 클릭
 3. `홈 화면에 추가` 버튼 선택
 4. 앱 이름 확인 후 `추가` 버튼 클릭
 5. 홈 화면에서 디미고간편식 아이콘 확인!
