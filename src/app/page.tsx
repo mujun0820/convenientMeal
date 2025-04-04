@@ -127,7 +127,7 @@ export default function Page() {
             <div className="text-xl font-bold">디미고간편식</div>
             <div className="flex space-x-4">
             <span className="cursor-pointer">
-              <Link href="https://github.com/mujun0820"><Github /></Link>
+              <Link href="https://github.com/mujun0820/convenientMeal"><Github /></Link>
             </span>
               <span className="cursor-pointer">
               <Link href="https://www.instagram.com/mujun0820?igsh=MXdkcGVmM2pmaTV4Mw%3D%3D&utm_source=qr"><Instagram /></Link>
